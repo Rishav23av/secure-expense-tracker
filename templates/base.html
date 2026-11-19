@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Expenses{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DESIGN SYSTEM
+       Rules applied from research:
+       · 8px grid for spacing (no random px values)
+       · Near-black / near-white, never pure #000/#fff
+       · Layered tinted shadows (not flat single-blur)
+       · Button h-padding ≈ 2× v-padding
+       · Border: darker than card on light UI, lighter on dark
+       · Saturated cool-gray neutral scale (slate)
+       · Tabular nums for money values
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /* ── Token scale ── */
+    :root {
+      /* Slate (cool gray, slightly blue-tinted) */
+      --s-0:   #ffffff;
+      --s-50:  #f8fafc;
+      --s-100: #f1f5f9;
+      --s-200: #e2e8f0;
+      --s-300: #cbd5e1;
+      --s-400: #94a3b8;
+      --s-500: #64748b;
+      --s-600: #475569;
+      --s-700: #334155;
+      --s-800: #1e293b;
+      --s-900: #0f172a;
+
+      /* Emerald accent */
+      --a-100: #d1fae5;
+      --a-200: #a7f3d0;
+      --a-400: #34d399;
+      --a-500: #10b981;
+      --a-600: #059669;
+      --a-700: #047857;
+
+      /* Semantic (light mode) */
+      --bg:          var(--s-50);
+      --surface:     var(--s-0);
+      --surface-2:   var(--s-100);
+      --border:      var(--s-200);
+      --border-2:    var(--s-100);
+      --text:        var(--s-900);
+      --text-2:      var(--s-500);
+      --text-3:      var(--s-400);
+      --accent:      var(--a-600);
+      --accent-bg:   var(--a-100);
+      --accent-text: var(--a-700);
+      --danger:      #dc2626;
+      --danger-bg:   #fee2e2;
+
+      /* Layered shadows — tinted with surface hue, low opacity */
+      --shadow-xs:
+        0 1px 2px rgba(15,23,42,.04);
+      --shadow-sm:
+        0 1px 2px rgba(15,23,42,.04),
+        0 2px 4px rgba(15,23,42,.04);
+      --shadow-md:
+        0 1px 2px rgba(15,23,42,.04),
+        0 4px 8px rgba(15,23,42,.06),
+        0 8px 12px rgba(15,23,42,.04);
+      --shadow-lg:
+        0 2px 4px rgba(15,23,42,.04),
+        0 8px 16px rgba(15,23,42,.08),
+        0 20px 32px rgba(15,23,42,.08);
+
+      /* Spacing (8px grid) */
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+      --sp-8: 32px;
+      --sp-10: 40px;
+      --sp-12: 48px;
+
+      /* Radius */
+      --r-sm: 4px;
+      --r-md: 6px;
+      --r-lg: 10px;
+      --r-xl: 16px;
+    }
+
+    /* ── Dark mode ── */
+    [data-theme="dark"] {
+      --bg:          var(--s-900);
+      --surface:     var(--s-800);
+      --surface-2:   var(--s-700);
+      --border:      var(--s-700);
+      --border-2:    var(--s-800);
+      --text:        var(--s-50);
+      --text-2:      var(--s-400);
+      --text-3:      var(--s-600);
+      --accent:      var(--a-500);
+      --accent-bg:   rgba(16,185,129,.12);
+      --accent-text: var(--a-400);
+      --danger:      #f87171;
+      --danger-bg:   rgba(220,38,38,.12);
+      /* No shadows on dark UI (per design rules) */
+      --shadow-xs:   none;
+      --shadow-sm:   0 0 0 1px var(--border);
+      --shadow-md:   0 0 0 1px var(--border);
+      --shadow-lg:   0 0 0 1px var(--border);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ── Typography ── */
+    .t-display { font-size: 24px; font-weight: 700; letter-spacing: -.5px; line-height: 1.25; }
+    .t-heading  { font-size: 18px; font-weight: 600; letter-spacing: -.3px; line-height: 1.3; }
+    .t-subhead  { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
+    .t-body     { font-size: 14px; font-weight: 400; }
+    .t-small    { font-size: 12px; font-weight: 500; }
+    .t-muted    { color: var(--text-2); }
+    .t-subtle   { color: var(--text-3); }
+    .t-num      { font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: 7px 14px;        /* v:7 h:14 — ratio ≈ 2:1 */
+      border-radius: var(--r-md);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: background .12s, color .12s, border-color .12s;
+      outline: none;
+    }
+    .btn:focus-visible { box-shadow: 0 0 0 3px rgba(5,150,105,.3); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--a-700); border-color: var(--a-700); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+    .btn-danger-ghost {
+      background: transparent;
+      color: var(--danger);
+      border-color: transparent;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .btn-danger-ghost:hover { background: var(--danger-bg); border-color: var(--danger-bg); }
+    .btn-icon {
+      padding: 7px;
+      border-radius: var(--r-md);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-icon:hover { background: var(--surface-2); color: var(--text); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ── Forms ── */
+    .form-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+    .form-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
+    .form-input {
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .12s, box-shadow .12s;
+      width: 100%;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(5,150,105,.12);
+    }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+    .form-input::placeholder { color: var(--text-3); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: var(--r-sm);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Toast system ── */
+    #toast-stack {
+      position: fixed;
+      bottom: var(--sp-6);
+      right: var(--sp-6);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: var(--sp-2);
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: 12px 16px;
+      background: var(--s-900);
+      color: var(--s-50);
+      border-radius: var(--r-lg);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      pointer-events: all;
+      max-width: 360px;
+      transform: translateY(12px);
+      opacity: 0;
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+    }
+    [data-theme="dark"] .toast { background: var(--s-0); color: var(--s-900); }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { flex-shrink: 0; }
+    .toast-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: .5;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0 0 var(--sp-2);
+    }
+    .toast-close:hover { opacity: 1; }
+
+    /* hidden flash data carrier */
+    [data-flash] { display: none; }
+  </style>
+</head>
+<body>
+
+  {% block content %}{% endblock %}
+
+  <!-- Toast container -->
+  <div id="toast-stack"></div>
+
+  <!-- Flash data (hidden, converted to toasts by JS) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div data-flash data-type="{{ cat }}" data-msg="{{ msg }}"></div>
+    {% endfor %}
+  {% endwith %}
+
+  <script>
+    // ── Theme ──
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme') || 'light';
+    html.setAttribute('data-theme', saved);
+
+    function toggleTheme() {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    }
+
+    // ── Toasts ──
+    const toastIcons = {
+      success: `<svg width="16" height="16" fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`,
+      error:   `<svg width="16" height="16" fill="none" stroke="#f87171" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6M9 9l6 6"/></svg>`,
+      warning: `<svg width="16" height="16" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+      info:    `<svg width="16" height="16" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/></svg>`,
+    };
+
+    function showToast(msg, type='info') {
+      const stack = document.getElementById('toast-stack');
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.innerHTML = `
+        <span class="toast-icon">${toastIcons[type] || toastIcons.info}</span>
+        <span>${msg}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+      stack.appendChild(t);
+      requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
+      setTimeout(() => {
+        t.classList.remove('show');
+        setTimeout(() => t.remove(), 300);
+      }, 4500);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-flash]').forEach(el => {
+        showToast(el.dataset.msg, el.dataset.type);
+        el.remove();
+      });
+    });
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
