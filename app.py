@@ -104,8 +104,9 @@ def validate_category(raw):
     return raw, None
 
 def sanitize(raw):
-    # Strip and limit only — Jinja2 auto-escapes at render time (XSS prevention)
-    # html.escape here would double-encode and display entities as literal text
+    # Strip and truncate only. Do NOT call html.escape() here:
+    # Jinja2 auto-escapes {{ }} expressions at render time, so escaping before
+    # storage would double-encode and show entities like &#x27; as literal text.
     return (raw or "").strip()[:500]
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
