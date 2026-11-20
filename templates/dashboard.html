@@ -1,0 +1,924 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — ExpenseTrack{% endblock %}
+
+{% block content %}
+<style>
+  /* ── App shell ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: var(--sp-5) 0;
+    gap: 0;
+  }
+
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 0 var(--sp-5) var(--sp-5);
+    border-bottom: 1px solid var(--border-2);
+    margin-bottom: var(--sp-4);
+  }
+  .sb-logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sb-brand-name { font-size: 14px; font-weight: 700; letter-spacing: -.3px; }
+  .sb-brand-sub  { font-size: 11px; color: var(--text-3); }
+
+  .sb-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  }
+
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 7px var(--sp-5);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    border-radius: 0;
+    transition: background .1s, color .1s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    text-align: left;
+    text-decoration: none;
+    width: 100%;
+  }
+  .sb-item:hover { background: var(--surface-2); color: var(--text); }
+  .sb-item.active { background: var(--accent-bg); color: var(--accent-text); font-weight: 600; }
+  .sb-item.active svg { stroke: var(--accent); }
+
+  .sb-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 20px;
+  }
+  .sb-item.active .sb-badge { background: var(--accent-bg); color: var(--accent-text); }
+
+  .sb-cat-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .sb-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--border-2);
+    padding: var(--sp-4) var(--sp-5) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+  .sb-user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) 0;
+  }
+  .sb-avatar {
+    width: 28px; height: 28px;
+    background: var(--accent-bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--accent-text);
+    flex-shrink: 0;
+  }
+  .sb-username { font-size: 13px; font-weight: 600; }
+  .sb-role     { font-size: 11px; color: var(--text-3); }
+
+  /* ── Main ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-5) var(--sp-8);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .page-header-left h1 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; }
+  .page-header-left p  { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .page-header-right   { display: flex; align-items: center; gap: var(--sp-2); }
+
+  /* ── Content area ── */
+  .content { padding: var(--sp-6) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-6); }
+
+  /* ── Stats grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-label { font-size: 12px; font-weight: 500; color: var(--text-2); letter-spacing: .02em; }
+  .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.8px;
+    margin-top: var(--sp-1);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-sub { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .stat-trend-up   { color: var(--a-600); font-weight: 600; }
+  .stat-trend-down { color: var(--danger); font-weight: 600; }
+
+  /* ── Charts ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-sm);
+  }
+  .chart-title { font-size: 13px; font-weight: 600; margin-bottom: var(--sp-4); }
+  .chart-title span { color: var(--text-2); font-weight: 400; margin-left: var(--sp-1); }
+  .chart-wrap { height: 180px; position: relative; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .filter-group { display: flex; align-items: center; gap: var(--sp-2); }
+  .filter-label { font-size: 12px; font-weight: 500; color: var(--text-2); white-space: nowrap; }
+  .filter-input {
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    font-size: 13px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+  }
+  .filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,.12); }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border);
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .table-title { font-size: 14px; font-weight: 600; }
+  .table-count { font-size: 12px; color: var(--text-3); }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead tr { border-bottom: 1px solid var(--border); }
+  .data-table th {
+    padding: 10px var(--sp-5);
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .data-table th a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-3);
+    transition: color .1s;
+  }
+  .data-table th a:hover { color: var(--text); }
+  .data-table th.sort-active a { color: var(--accent); }
+
+  .data-table td {
+    padding: 11px var(--sp-5);
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-2);
+    vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td { background: var(--surface-2); }
+
+  .data-table .col-amount {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.3px;
+  }
+  .data-table .col-actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .data-table .col-desc {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-2);
+  }
+
+  .table-footer {
+    padding: 10px var(--sp-5);
+    border-top: 2px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-2);
+    background: var(--surface-2);
+  }
+  .table-footer-total {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty-state {
+    padding: var(--sp-12) var(--sp-6);
+    text-align: center;
+  }
+  .empty-icon {
+    width: 48px; height: 48px;
+    background: var(--surface-2);
+    border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto var(--sp-4);
+  }
+  .empty-title { font-size: 15px; font-weight: 600; }
+  .empty-sub   { font-size: 13px; color: var(--text-2); margin-top: var(--sp-1); }
+
+  /* ── Add/Edit Drawer ── */
+  .drawer-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,.4);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+    backdrop-filter: blur(2px);
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+  .drawer {
+    position: fixed;
+    top: 0; right: 0;
+    height: 100%;
+    width: 400px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 101;
+    transform: translateX(100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+  }
+  .drawer.open { transform: translateX(0); }
+
+  .drawer-head {
+    padding: var(--sp-5) var(--sp-6);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .drawer-title { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+  .drawer-close {
+    width: 32px; height: 32px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .1s;
+  }
+  .drawer-close:hover { background: var(--surface-2); color: var(--text); }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sp-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+  }
+  .drawer-footer {
+    padding: var(--sp-5) var(--sp-6);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: var(--sp-3);
+    flex-shrink: 0;
+  }
+
+  /* ── Delete confirm ── */
+  .delete-confirm {
+    display: none;
+    position: absolute;
+    right: var(--sp-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--sp-4);
+    z-index: 10;
+    white-space: nowrap;
+    font-size: 13px;
+    min-width: 200px;
+  }
+  .delete-confirm p { color: var(--text); font-weight: 500; margin-bottom: var(--sp-3); }
+  .delete-confirm-row { display: flex; gap: var(--sp-2); }
+
+  /* ── Mobile ── */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .content { padding: var(--sp-4); }
+    .page-header { padding: var(--sp-4); }
+    .drawer { width: 100%; }
+  }
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="shell">
+
+  <!-- ━━━━ SIDEBAR ━━━━ -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">ExpenseTrack</div>
+        <div class="sb-brand-sub">Personal</div>
+      </div>
+    </div>
+
+    <div class="sb-section-label">Views</div>
+
+    <a href="{{ url_for('dashboard') }}"
+       class="sb-item {% if not cat_filter %}active{% endif %}">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      All expenses
+      <span class="sb-badge">{{ stats.count }}</span>
+    </a>
+
+    <div class="sb-section-label">Categories</div>
+
+    {% set cat_icons = {
+      'Food':      'M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3',
+      'Travel':    'M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z',
+      'Education': 'M12 14l9-5-9-5-9 5 9 5zM12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z',
+      'Shopping':  'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0',
+      'Medical':   'M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z',
+      'Other':     'M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z',
+    } %}
+
+    {% for cat in categories %}
+    <a href="{{ url_for('dashboard', category=cat) }}"
+       class="sb-item {% if cat_filter == cat %}active{% endif %}">
+      <span class="sb-cat-dot" style="background:{{ cat_colors[cat] }};
+            {% if cat_filter == cat %}opacity:1{% else %}opacity:.7{% endif %}"></span>
+      {{ cat }}
+      <span class="sb-badge">{{ cat_counts[cat] }}</span>
+    </a>
+    {% endfor %}
+
+    <!-- Footer -->
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">{{ session.username[0].upper() }}</div>
+        <div>
+          <div class="sb-username">{{ session.username }}</div>
+          <div class="sb-role">Member</div>
+        </div>
+      </div>
+
+      <button class="sb-item" onclick="toggleTheme()" style="border:none;">
+        <svg id="theme-icon-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        <svg id="theme-icon-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" style="display:none">
+          <circle cx="12" cy="12" r="5"/><path stroke-linecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        Toggle theme
+      </button>
+
+      <a href="{{ url_for('logout') }}" class="sb-item">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Sign out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ━━━━ MAIN ━━━━ -->
+  <main class="main">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>{% if cat_filter %}{{ cat_filter }}{% else %}All Expenses{% endif %}</h1>
+        <p>{{ today[:7] }} · {{ expenses|length }} record{% if expenses|length != 1 %}s{% endif %}</p>
+      </div>
+      <div class="page-header-right">
+        <a href="{{ url_for('export_csv') }}" class="btn btn-ghost btn-sm">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/>
+          </svg>
+          Export CSV
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="openAddDrawer()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Expense
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── Stats ── -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">This month</div>
+          <div class="stat-value">${{ "%.2f"|format(stats.this_month) }}</div>
+          <div class="stat-sub">
+            {% if stats.pct_change is not none %}
+              {% if stats.pct_change > 0 %}
+                <span class="stat-trend-down">↑ {{ stats.pct_change }}%</span> vs last month
+              {% elif stats.pct_change < 0 %}
+                <span class="stat-trend-up">↓ {{ (stats.pct_change * -1) }}%</span> vs last month
+              {% else %}
+                Same as last month
+              {% endif %}
+            {% else %}
+              No prior month data
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">All time</div>
+          <div class="stat-value">${{ "%.2f"|format(stats.all_time) }}</div>
+          <div class="stat-sub">{{ stats.count }} total expenses</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Biggest expense</div>
+          {% if stats.biggest %}
+          <div class="stat-value">${{ "%.2f"|format(stats.biggest.amount) }}</div>
+          <div class="stat-sub">{{ stats.biggest.category }}
+            {% if stats.biggest.description %}· {{ stats.biggest.description[:30] }}{% endif %}</div>
+          {% else %}
+          <div class="stat-value">—</div>
+          <div class="stat-sub">No expenses yet</div>
+          {% endif %}
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Top category this month</div>
+          {% if stats.top_cat %}
+          <div class="stat-value" style="font-size:20px;">{{ stats.top_cat.category }}</div>
+          <div class="stat-sub">${{ "%.2f"|format(stats.top_cat.t) }} spent</div>
+          {% else %}
+          <div class="stat-value">—</div>
+          <div class="stat-sub">No data yet</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ── Charts ── -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Spending by category <span>all time</span></div>
+          <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Spending over time <span>last 7 months</span></div>
+          <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── Filter bar ── -->
+      <form method="GET" action="{{ url_for('dashboard') }}">
+        {% if cat_filter %}
+          <input type="hidden" name="category" value="{{ cat_filter }}">
+        {% endif %}
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">From</span>
+            <input class="filter-input" type="date" name="date_from" value="{{ date_from }}">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">To</span>
+            <input class="filter-input" type="date" name="date_to" value="{{ date_to }}">
+          </div>
+          <button type="submit" class="btn btn-ghost btn-sm">Apply</button>
+          {% if date_from or date_to or cat_filter %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Clear
+          </a>
+          {% endif %}
+        </div>
+      </form>
+
+      <!-- ── Table ── -->
+      <div class="table-card">
+        <div class="table-header">
+          <div>
+            <span class="table-title">Expenses</span>
+            <span class="table-count"> · {{ expenses|length }} record{% if expenses|length != 1 %}s{% endif %}</span>
+          </div>
+        </div>
+
+        {% if expenses %}
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="{% if sort_by=='date' %}sort-active{% endif %}">
+                  <a href="{{ url_for('dashboard', sort='date', dir='asc' if sort_by=='date' and sort_dir=='desc' else 'desc', category=cat_filter, date_from=date_from, date_to=date_to) }}">
+                    Date
+                    {% if sort_by=='date' %}
+                      {% if sort_dir=='desc' %}↓{% else %}↑{% endif %}
+                    {% endif %}
+                  </a>
+                </th>
+                <th class="{% if sort_by=='category' %}sort-active{% endif %}">
+                  <a href="{{ url_for('dashboard', sort='category', dir='asc' if sort_by=='category' and sort_dir=='desc' else 'desc', category=cat_filter, date_from=date_from, date_to=date_to) }}">
+                    Category
+                    {% if sort_by=='category' %}{% if sort_dir=='desc' %}↓{% else %}↑{% endif %}{% endif %}
+                  </a>
+                </th>
+                <th class="{% if sort_by=='amount' %}sort-active{% endif %}" style="text-align:right;">
+                  <a href="{{ url_for('dashboard', sort='amount', dir='asc' if sort_by=='amount' and sort_dir=='desc' else 'desc', category=cat_filter, date_from=date_from, date_to=date_to) }}">
+                    Amount
+                    {% if sort_by=='amount' %}{% if sort_dir=='desc' %}↓{% else %}↑{% endif %}{% endif %}
+                  </a>
+                </th>
+                <th>Description</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for exp in expenses %}
+              <tr>
+                <td style="color:var(--text-2);">{{ exp.date }}</td>
+                <td>
+                  <span class="badge" style="
+                    background: {{ cat_colors[exp.category] }}18;
+                    color: {{ cat_colors[exp.category] }};
+                    border: 1px solid {{ cat_colors[exp.category] }}33;">
+                    <span class="badge-dot" style="background:{{ cat_colors[exp.category] }};"></span>
+                    {{ exp.category }}
+                  </span>
+                </td>
+                <td class="col-amount" style="color:var(--text);">${{ "%.2f"|format(exp.amount) }}</td>
+                <td class="col-desc" title="{{ exp.description }}">{{ exp.description or '—' }}</td>
+                <td class="col-actions" style="position:relative;">
+                  <button class="btn btn-ghost btn-sm"
+                          onclick="openEditDrawer({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.date }}', {{ exp.description|tojson }})">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit
+                  </button>
+                  <button class="btn btn-danger-ghost"
+                          onclick="toggleDeleteConfirm(this, {{ exp.id }})">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                    </svg>
+                  </button>
+                  <!-- Inline delete confirm -->
+                  <div class="delete-confirm" id="del-{{ exp.id }}">
+                    <p>Delete this expense?</p>
+                    <div class="delete-confirm-row">
+                      <form method="POST" action="{{ url_for('delete_expense', expense_id=exp.id) }}">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:#fff;border-color:var(--danger);">Delete</button>
+                      </form>
+                      <button class="btn btn-ghost btn-sm" onclick="closeDeleteConfirm({{ exp.id }})">Cancel</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span>{{ expenses|length }} expense{% if expenses|length != 1 %}s{% endif %}</span>
+          <div class="table-footer-total">${{ "%.2f"|format(total) }}</div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="22" height="22" fill="none" stroke="var(--text-3)" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <div class="empty-title">No expenses found</div>
+          <div class="empty-sub">
+            {% if cat_filter or date_from or date_to %}
+              Try clearing your filters
+            {% else %}
+              Add your first expense to get started
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+    </div><!-- /content -->
+  </main><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ━━━━ DRAWER ━━━━ -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawerTitle">Add Expense</div>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <form method="POST" id="expenseForm" action="{{ url_for('add_expense') }}">
+    <div class="drawer-body">
+
+      <div class="form-field">
+        <label class="form-label" for="d-category">Category</label>
+        <select class="form-input" id="d-category" name="category" required>
+          <option value="">— Select a category —</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="d-amount">Amount ($)</label>
+        <input class="form-input" type="number" id="d-amount" name="amount"
+               step="0.01" min="0.01" placeholder="0.00" required>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="d-date">Date</label>
+        <input class="form-input" type="date" id="d-date" name="date"
+               value="{{ today }}" required>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="d-desc">
+          Description
+          <span style="font-weight:400;color:var(--text-3);"> — optional, max 500 chars</span>
+        </label>
+        <textarea class="form-input" id="d-desc" name="description"
+                  placeholder="e.g. Lunch with client, Uber to airport…"></textarea>
+      </div>
+
+      <!-- Security note -->
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4);font-size:12px;color:var(--text-2);line-height:1.6;">
+        <strong style="color:var(--text);">Try the SQL injection demo:</strong><br>
+        Enter <code style="background:var(--border);padding:1px 5px;border-radius:3px;">Food'; DROP TABLE expenses; --</code>
+        as a description — it'll be stored safely as plain text, not executed as SQL.
+      </div>
+
+    </div>
+    <div class="drawer-footer">
+      <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+        Save Expense
+      </button>
+      <button type="button" class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+    </div>
+  </form>
+</aside>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  // ── Theme icon sync ──
+  function syncThemeIcon() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.getElementById('theme-icon-moon').style.display = dark ? 'none' : '';
+    document.getElementById('theme-icon-sun').style.display  = dark ? '' : 'none';
+  }
+  syncThemeIcon();
+  const _origToggle = window.toggleTheme;
+  window.toggleTheme = function() { _origToggle(); syncThemeIcon(); };
+
+  // ── Drawer ──
+  function openDrawer() {
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function openAddDrawer() {
+    document.getElementById('drawerTitle').textContent = 'Add Expense';
+    const form = document.getElementById('expenseForm');
+    form.action = "{{ url_for('add_expense') }}";
+    form.reset();
+    document.getElementById('d-date').value = "{{ today }}";
+    openDrawer();
+  }
+  function openEditDrawer(id, cat, amt, dt, desc) {
+    document.getElementById('drawerTitle').textContent = 'Edit Expense';
+    document.getElementById('expenseForm').action = `/edit_expense/${id}`;
+    document.getElementById('d-category').value = cat;
+    document.getElementById('d-amount').value   = amt;
+    document.getElementById('d-date').value     = dt;
+    document.getElementById('d-desc').value     = desc || '';
+    openDrawer();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  // ── Delete confirm ──
+  function toggleDeleteConfirm(btn, id) {
+    document.querySelectorAll('.delete-confirm').forEach(el => {
+      if (el.id !== `del-${id}`) el.style.display = 'none';
+    });
+    const el = document.getElementById(`del-${id}`);
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
+  function closeDeleteConfirm(id) {
+    document.getElementById(`del-${id}`).style.display = 'none';
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[onclick*="toggleDeleteConfirm"]') &&
+        !e.target.closest('.delete-confirm')) {
+      document.querySelectorAll('.delete-confirm').forEach(el => el.style.display='none');
+    }
+  });
+
+  // ── Charts ──
+  const catColors = {{ cat_colors|tojson }};
+  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+  function chartDefaults() {
+    const dark = isDark();
+    return {
+      gridColor:  dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)',
+      textColor:  dark ? '#94a3b8' : '#64748b',
+      borderColor:dark ? '#334155' : '#e2e8f0',
+    };
+  }
+
+  Chart.defaults.font.family = '"Inter", -apple-system, sans-serif';
+
+  fetch('/api/chart_data')
+    .then(r => r.json())
+    .then(data => {
+      const d = chartDefaults();
+      const catLabels = Object.keys(data.by_category);
+      const catVals   = Object.values(data.by_category);
+      const catBg     = catLabels.map(c => (catColors[c] || '#6b7280') + '28');
+      const catBorder = catLabels.map(c => catColors[c] || '#6b7280');
+
+      // Category bar chart
+      new Chart(document.getElementById('catChart'), {
+        type: 'bar',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catVals,
+            backgroundColor: catBg,
+            borderColor: catBorder,
+            borderWidth: 2,
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` } } },
+          scales: {
+            x: { grid: { display: false }, border: { display: false },
+                 ticks: { color: d.textColor, font: { size: 11 } } },
+            y: { grid: { color: d.gridColor, drawBorder: false },
+                 border: { display: false, dash: [4,4] },
+                 ticks: { color: d.textColor, font: { size: 11 },
+                          callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v)) } }
+          }
+        }
+      });
+
+      // Timeline area chart
+      const months = data.by_month.map(m => m.month);
+      const totals  = data.by_month.map(m => m.total);
+      new Chart(document.getElementById('timeChart'), {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            data: totals,
+            borderColor: '#059669',
+            backgroundColor: isDark()
+              ? 'rgba(16,185,129,.1)'
+              : 'rgba(5,150,105,.08)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#059669',
+            pointBorderColor: isDark() ? '#1e293b' : '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` } } },
+          scales: {
+            x: { grid: { display: false }, border: { display: false },
+                 ticks: { color: d.textColor, font: { size: 11 } } },
+            y: { grid: { color: d.gridColor },
+                 border: { display: false },
+                 ticks: { color: d.textColor, font: { size: 11 },
+                          callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v)) } }
+          }
+        }
+      });
+    })
+    .catch(() => {
+      // Charts fail silently if no data
+    });
+</script>
+{% endblock %}
