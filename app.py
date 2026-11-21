@@ -207,9 +207,11 @@ def login():
         db       = get_db()
         user     = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
         if not user or not check_password_hash(user["password_hash"], password):
+            # Log failed attempt for brute-force monitoring
             db.execute("INSERT INTO failed_logins (username, ip_address) VALUES (?,?)",
                        (username, request.remote_addr))
             db.commit()
+            # Same message for both "no user" and "wrong password" — avoids user enumeration
             flash("Invalid username or password.", "error")
             return render_template("login.html")
         session.clear()
