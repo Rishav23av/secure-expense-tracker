@@ -87,6 +87,8 @@ def validate_amount(raw):
         v = float(raw)
         if v <= 0:
             return None, "Amount must be greater than zero."
+        if v > 1_000_000:
+            return None, "Amount seems unreasonably large (max $1,000,000)."
         return round(v, 2), None
     except (ValueError, TypeError):
         return None, "Amount must be a valid number."
