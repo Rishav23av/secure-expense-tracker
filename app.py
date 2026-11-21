@@ -214,6 +214,7 @@ def login():
             # Same message for both "no user" and "wrong password" — avoids user enumeration
             flash("Invalid username or password.", "error")
             return render_template("login.html")
+        # session.clear() before setting new values prevents session fixation attacks
         session.clear()
         session["user_id"]  = user["id"]
         session["username"] = user["username"]
@@ -328,6 +329,7 @@ def delete_expense(expense_id):
                       (expense_id, user_id)).fetchone():
         flash("Not found or access denied.", "error")
         return redirect(url_for("dashboard"))
+    # Dual WHERE clause (id AND user_id) ensures user A cannot delete user B's records
     db.execute("DELETE FROM expenses WHERE id=? AND user_id=?", (expense_id, user_id))
     db.commit()
     flash("Expense deleted.", "success")
