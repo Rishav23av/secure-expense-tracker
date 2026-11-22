@@ -388,10 +388,12 @@
     .charts-grid { grid-template-columns: 1fr; }
     .content { padding: var(--sp-4); }
     .page-header { padding: var(--sp-4); }
-    .drawer { width: 100%; }
+    .drawer { width: 100%; border-left: none; }
   }
   @media (max-width: 600px) {
     .stats-grid { grid-template-columns: 1fr; }
+    .page-header-right { width: 100%; justify-content: flex-end; }
+    .filter-bar { flex-direction: column; align-items: flex-start; }
   }
 </style>
 
