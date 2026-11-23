@@ -177,7 +177,7 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm  = request.form.get("confirm_password", "")
-        if not (3 <= len(username) <= 50) or not re.fullmatch(r"[a-zA-Z0-9_]+", username):
+        if not username or not (3 <= len(username) <= 50) or not re.fullmatch(r"[a-zA-Z0-9_]+", username):
             flash("Username: 3–50 chars, letters/numbers/underscore only.", "error")
             return render_template("register.html")
         if len(password) < 8:
