@@ -260,7 +260,7 @@
     white-space: nowrap;
   }
   .data-table .col-desc {
-    max-width: 200px;
+    max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -643,7 +643,7 @@
                   </span>
                 </td>
                 <td class="col-amount" style="color:var(--text);">${{ "%.2f"|format(exp.amount) }}</td>
-                <td class="col-desc" title="{{ exp.description }}">{{ exp.description or '—' }}</td>
+                <td class="col-desc" title="{{ exp.description or '' }}">{{ exp.description or '—' }}</td>
                 <td class="col-actions" style="position:relative;">
                   <button class="btn btn-ghost btn-sm"
                           onclick="openEditDrawer({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.date }}', {{ exp.description|tojson }})">
