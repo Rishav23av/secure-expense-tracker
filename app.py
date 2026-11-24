@@ -19,6 +19,7 @@ from functools import wraps
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, g, jsonify, Response)
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # ── App setup ──────────────────────────────────────────────────────────────────
@@ -33,9 +34,13 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Strict",                   # V10: not sent from other sites
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=15),   # V10: 15 min idle timeout
     MAX_CONTENT_LENGTH=16 * 1024,                       # V9: reject request bodies over 16 KB
+    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE") == "1",  # HTTPS-only when hosted
 )
+if os.environ.get("BEHIND_PROXY") == "1":
+    # Hosting puts a proxy in front: trust one hop so the audit log records the visitor's real IP
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
-DATABASE = os.path.join(BASE_DIR, "expenses.db")
+DATABASE = os.environ.get("DATABASE_PATH") or os.path.join(BASE_DIR, "expenses.db")
 MIN_PASSWORD_LENGTH = 12
 MAX_DESCRIPTION     = 500
 MAX_AMOUNT          = Decimal("1000000")
@@ -540,8 +545,9 @@ def chart_data():
     return jsonify({"by_category": by_cat, "by_month": by_month,
                     "colors": CATEGORY_COLORS})
 
+init_db()   # runs on import too, so a production server (gunicorn) gets the tables
+
 if __name__ == "__main__":
-    init_db()
     port = int(os.environ.get("PORT", 8080))
     print(f"DB ready · http://127.0.0.1:{port}")
     # V6: the debugger shows code and allows running commands, so it's off unless FLASK_DEBUG=1

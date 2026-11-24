@@ -19,6 +19,18 @@ Run the security checks:
 python3 test_security.py
 ```
 
+## Deploy (from GitHub)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Rishav23av/secure-expense-tracker)
+
+`render.yaml` tells Render everything: it installs `requirements.txt`, runs the app with
+gunicorn, generates a random `SECRET_KEY`, and turns on HTTPS-only cookies. Every push to
+`main` redeploys automatically.
+
+On the free plan the disk is temporary, so accounts and expenses reset when the app
+restarts or redeploys. That's fine for a demo; a real deployment needs a persistent disk
+(set `DATABASE_PATH` to a file on it).
+
 ## Features
 
 - Register, sign in, sign out
