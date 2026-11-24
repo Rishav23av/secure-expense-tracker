@@ -647,8 +647,10 @@
                 <td class="col-amount" style="color:var(--text);">${{ "%.2f"|format(exp.amount) }}</td>
                 <td class="col-desc" title="{{ exp.description or '' }}">{{ exp.description or '—' }}</td>
                 <td class="col-actions" style="position:relative;">
-                  <button class="btn btn-ghost btn-sm"
-                          onclick="openEditDrawer({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.date }}', {{ exp.description|tojson }})">
+                  <button class="btn btn-ghost btn-sm" onclick="openEditDrawer(this)"
+                          data-id="{{ exp.id }}" data-category="{{ exp.category }}"
+                          data-amount="{{ '%.2f'|format(exp.amount) }}" data-date="{{ exp.date }}"
+                          data-desc="{{ exp.description or '' }}">
                     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -665,6 +667,7 @@
                     <p>Delete this expense?</p>
                     <div class="delete-confirm-row">
                       <form method="POST" action="{{ url_for('delete_expense', expense_id=exp.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm" style="background:var(--danger);color:#fff;border-color:var(--danger);">Delete</button>
                       </form>
                       <button class="btn btn-ghost btn-sm" onclick="closeDeleteConfirm({{ exp.id }})">Cancel</button>
@@ -715,6 +718,7 @@
     </button>
   </div>
   <form method="POST" id="expenseForm" action="{{ url_for('add_expense') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="drawer-body">
 
       <div class="form-field">
@@ -730,13 +734,13 @@
       <div class="form-field">
         <label class="form-label" for="d-amount">Amount ($)</label>
         <input class="form-input" type="number" id="d-amount" name="amount"
-               step="0.01" min="0.01" placeholder="0.00" required>
+               step="0.01" min="0.01" max="1000000" placeholder="0.00" required>
       </div>
 
       <div class="form-field">
         <label class="form-label" for="d-date">Date</label>
         <input class="form-input" type="date" id="d-date" name="date"
-               value="{{ today }}" required>
+               value="{{ today }}" min="2000-01-01" max="{{ today }}" required>
       </div>
 
       <div class="form-field">
@@ -744,7 +748,7 @@
           Description
           <span style="font-weight:400;color:var(--text-3);"> — optional, max 500 chars</span>
         </label>
-        <textarea class="form-input" id="d-desc" name="description"
+        <textarea class="form-input" id="d-desc" name="description" maxlength="500"
                   placeholder="e.g. Lunch with client, Uber to airport…"></textarea>
       </div>
 
@@ -799,13 +803,14 @@
     document.getElementById('d-date').value = "{{ today }}";
     openDrawer();
   }
-  function openEditDrawer(id, cat, amt, dt, desc) {
+  function openEditDrawer(btn) {
+    const d = btn.dataset;   // values come from escaped data-* attributes, never pasted into code
     document.getElementById('drawerTitle').textContent = 'Edit Expense';
-    document.getElementById('expenseForm').action = `/edit_expense/${id}`;
-    document.getElementById('d-category').value = cat;
-    document.getElementById('d-amount').value   = amt;
-    document.getElementById('d-date').value     = dt;
-    document.getElementById('d-desc').value     = desc || '';
+    document.getElementById('expenseForm').action = `/edit_expense/${encodeURIComponent(d.id)}`;
+    document.getElementById('d-category').value = d.category;
+    document.getElementById('d-amount').value   = d.amount;
+    document.getElementById('d-date').value     = d.date;
+    document.getElementById('d-desc').value     = d.desc;
     openDrawer();
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });

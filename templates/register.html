@@ -108,6 +108,7 @@
       </div>
 
       <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-field">
           <label class="form-label" for="username">Username</label>
           <input class="form-input" type="text" id="username" name="username"
@@ -117,7 +118,9 @@
         <div class="form-field">
           <label class="form-label" for="password">Password</label>
           <input class="form-input" type="password" id="password" name="password"
-                 autocomplete="new-password" placeholder="At least 8 characters" required>
+                 autocomplete="new-password" placeholder="At least 12 characters"
+                 minlength="12" maxlength="128" required>
+          <span class="field-hint">12+ characters · a short phrase is easy to remember</span>
         </div>
         <div class="form-field">
           <label class="form-label" for="confirm_password">Confirm password</label>
