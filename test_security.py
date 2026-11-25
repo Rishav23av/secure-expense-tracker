@@ -113,6 +113,12 @@ for data in bad_inputs:
     post(alice, "/add_expense", **data)
 check("V5 bad amounts, categories, dates and long text are all rejected",
       count_expenses() == before)
+for bad_name in ["ab", "bad name!", "<script>", "x" * 51]:
+    post(tracker.app.test_client(), "/register", username=bad_name,
+         password=PASSWORD, confirm_password=PASSWORD)
+names = {r[0] for r in db().execute("SELECT username FROM users")}
+check("V5 regex whitelist rejects bad usernames (spaces, symbols, too short or long)",
+      not names & {"ab", "bad name!", "<script>", "x" * 51})
 
 # V6 error handling
 resp = alice.get("/_test_crash")

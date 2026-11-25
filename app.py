@@ -57,6 +57,11 @@ logging.basicConfig(filename=os.path.join(BASE_DIR, "logs", "app.log"), level=lo
 log = logging.getLogger("expense_tracker")
 
 ALLOWED_CATEGORIES = ["Food", "Travel", "Education", "Shopping", "Medical", "Other"]
+
+# V5: regex patterns for the shape of each input (whitelist: only these characters are allowed)
+USERNAME_RE = re.compile(r"[A-Za-z0-9_]{3,50}")            # letters, digits, underscore
+AMOUNT_RE   = re.compile(r"\d{1,7}(\.\d{1,2})?")           # e.g. 12 or 12.50, no signs or letters
+DATE_RE     = re.compile(r"\d{4}-\d{2}-\d{2}")             # YYYY-MM-DD
 CATEGORY_COLORS = {
     "Food":      "#f97316",
     "Travel":    "#8b5cf6",
@@ -200,8 +205,11 @@ def login_required(f):
 # ── Validators ─────────────────────────────────────────────────────────────────
 # V5: allow-list validation. Invalid input is rejected, never silently "fixed".
 def validate_amount(raw):
+    raw = (raw or "").strip()
+    if not AMOUNT_RE.fullmatch(raw):           # regex first: blocks "-5", "1e308", "nan", "abc"
+        return None, "Amount must be a number like 12.50 (at most 2 decimal places)."
     try:
-        v = Decimal((raw or "").strip())        # Decimal, not float: exact money values
+        v = Decimal(raw)                        # Decimal, not float: exact money values
     except InvalidOperation:
         return None, "Amount must be a valid number."
     if not v.is_finite() or v <= 0:            # rejects NaN, Infinity, zero and negatives
@@ -213,6 +221,8 @@ def validate_amount(raw):
     return float(v), None
 
 def validate_date(raw):
+    if not DATE_RE.fullmatch(raw or ""):
+        return None, "Date must be YYYY-MM-DD."
     try:
         d = datetime.strptime(raw or "", "%Y-%m-%d").date()
     except ValueError:
@@ -313,7 +323,7 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm  = request.form.get("confirm_password", "")
-        if not username or not (3 <= len(username) <= 50) or not re.fullmatch(r"[a-zA-Z0-9_]+", username):
+        if not USERNAME_RE.fullmatch(username):
             flash("Username: 3–50 chars, letters/numbers/underscore only.", "error")
             return render_template("register.html")
         if len(password) < MIN_PASSWORD_LENGTH:
